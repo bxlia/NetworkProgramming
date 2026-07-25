@@ -9,6 +9,7 @@
 #include<iphlpapi.h>
 
 #include<FormatLastError.h>
+#include<Message.h>
 
 using std::cin;
 using std::cout;
@@ -104,8 +105,8 @@ void main()
 		int client_address_len = sizeof(client_address);
 		SOCKET client_socket = accept(listen_socket, (SOCKADDR*)&client_address, &client_address_len);
 		//cout << client_address.sa_data << endl;
-		cout << "Accept DONE" << endl;
-		cout << inet_ntoa(client_address.sin_addr) << ":" << ntohs(client_address.sin_port) << endl;
+		//cout << "Accept DONE" << endl;
+		cout << inet_ntoa(client_address.sin_addr) << ":" << ntohs(client_address.sin_port);
 		if (client_socket == INVALID_SOCKET)
 		{
 			cout << FormatLastError(WSAGetLastError(), szError) << endl;
@@ -115,21 +116,30 @@ void main()
 			freeaddrinfo(target);
 			WSACleanup();
 			return;
+		}if (n < MAX_CONNECTIONS)
+		{
+
+			//ClientHandler(client_socket);
+
+			g_hSockets[n] = client_socket;
+			g_hThreads[n] = CreateThread
+			(
+				NULL,
+				0,
+				(LPTHREAD_START_ROUTINE)ClientHandler,
+				(LPVOID)g_hSockets[n],
+				NULL,
+				g_dwThreadIDs + n
+			);
+			n++;
 		}
-		//ClientHandler(client_socket);
-
-		g_hSockets[n] = client_socket;
-		g_hThreads[n] = CreateThread
-		(
-			NULL,
-			0,
-			(LPTHREAD_START_ROUTINE)ClientHandler,
-			(LPVOID)g_hSockets[n],
-			NULL,
-			g_dwThreadIDs + n
-		);
-		n++;
-
+		else
+		{
+			send(client_socket, DECLINE_MESSAGE, strlen(DECLINE_MESSAGE), NULL);
+			if (iResult == SOCKET_ERROR) FormatLastError(WSAGetLastError(), szError);
+			iResult = shutdown(client_socket, SD_BOTH);
+			cout << " - DECLINE" << endl;
+		}
 	} while (true);
 	//9) Освободить ресурсы
 	closesocket(listen_socket);
