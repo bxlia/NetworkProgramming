@@ -97,37 +97,40 @@ void main()
 		return;
 	}
 
-	//5) Принимаем подключение от клиентов
-	sockaddr_in client_address;
-	int client_address_len = sizeof(client_address);
-	SOCKET client_socket = accept(listen_socket, (SOCKADDR*)&client_address, &client_address_len);
-	//cout << client_address.sa_data << endl;
-	cout << "Accept DONE" << endl;
-	cout << inet_ntoa(client_address.sin_addr) << ":" << ntohs(client_address.sin_port) << endl;
-	if (client_socket == INVALID_SOCKET)
+	do
 	{
-		cout << FormatLastError(WSAGetLastError(), szError) << endl;
-		cout << "Accept failed with error: " << WSAGetLastError() << endl;
-		cout << "Не удалось принять подключение от клиента: " << WSAGetLastError() << endl;
-		closesocket(listen_socket);
-		freeaddrinfo(target);
-		WSACleanup();
-		return;
-	}
-	//ClientHandler(client_socket);
+		//5) Принимаем подключение от клиентов
+		sockaddr_in client_address;
+		int client_address_len = sizeof(client_address);
+		SOCKET client_socket = accept(listen_socket, (SOCKADDR*)&client_address, &client_address_len);
+		//cout << client_address.sa_data << endl;
+		cout << "Accept DONE" << endl;
+		cout << inet_ntoa(client_address.sin_addr) << ":" << ntohs(client_address.sin_port) << endl;
+		if (client_socket == INVALID_SOCKET)
+		{
+			cout << FormatLastError(WSAGetLastError(), szError) << endl;
+			cout << "Accept failed with error: " << WSAGetLastError() << endl;
+			cout << "Не удалось принять подключение от клиента: " << WSAGetLastError() << endl;
+			closesocket(listen_socket);
+			freeaddrinfo(target);
+			WSACleanup();
+			return;
+		}
+		//ClientHandler(client_socket);
 
-	g_hSockets[n] = client_socket;
-	g_hThreads[n] = CreateThread
-	(
-		NULL,
-		0,
-		(LPTHREAD_START_ROUTINE)ClientHandler,
-		(LPVOID)g_hSockets[n],
-		NULL,
-		g_dwThreadIDs + n
-	);
-	n++;
-	
+		g_hSockets[n] = client_socket;
+		g_hThreads[n] = CreateThread
+		(
+			NULL,
+			0,
+			(LPTHREAD_START_ROUTINE)ClientHandler,
+			(LPVOID)g_hSockets[n],
+			NULL,
+			g_dwThreadIDs + n
+		);
+		n++;
+
+	} while (true);
 	//9) Освободить ресурсы
 	closesocket(listen_socket);
 	freeaddrinfo(target);
@@ -136,6 +139,16 @@ void main()
 
 VOID ClientHandler(SOCKET client_socket)
 {
+	SOCKADDR_IN client_address;
+	client_address.sin_family = AF_INET; // TCP/IP
+	INT namelen = sizeof(client_address);
+	getpeername(client_socket, (SOCKADDR*) & client_address, &namelen);
+	CHAR sz_client_address[32] = {};
+	CHAR sz_client_connected[32] = {};
+	sprintf(sz_client_address, "%s:%d - ", inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port));
+	sprintf(sz_client_connected, "%s CONNECTED", sz_client_address);
+	cout << "Client " << sz_client_connected << endl;
+
 	INT iResult = 0;
 	DWORD dwError = 0;
 	CHAR szError[256] = {};
@@ -151,7 +164,8 @@ VOID ClientHandler(SOCKET client_socket)
 			iResult = recv(client_socket, recv_buffer, MTU, NULL);
 			if (iResult > 0)
 			{
-				cout << iResult << " Bytes received. Message: " << recv_buffer << endl;
+				cout << sz_client_address << recv_buffer << ". (" << iResult << " Bytes);" << endl;
+				//cout << iResult << " Bytes received. Message: " << sz_client_address << recv_buffer << endl;
 
 			}
 			else if (iResult == 0) cout << "Nothing received, connection closing.\nНет данных от клиента, закрываем соединение" << endl;
