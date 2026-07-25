@@ -85,7 +85,7 @@ void main()
 	freeaddrinfo(target);
 
 	//4) Отправка данных на Сервер
-	CHAR send_buffer[MTU] = "Привет Сервер!";
+	CHAR send_buffer[MTU] = "Hello Server! How are you?";
 	do
 	{
 			iResult = send(connect_socket, send_buffer, strlen(send_buffer), 0);
@@ -118,6 +118,7 @@ void main()
 	cin.getline(send_buffer, MTU);
 	SetConsoleCP(866);
 	} while (strcmp(send_buffer, "exit"));
+
 	//6) Завершаем сеанс работы с Сервером и освобождаем ресурсы
 	iResult = shutdown(connect_socket, SD_BOTH);	//закрываем соединение с Сервером в обоих направлениях
 	dwError = WSAGetLastError();
