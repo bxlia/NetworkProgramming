@@ -237,7 +237,7 @@ VOID ClientHandler(SOCKET client_socket)
 			}
 
 			//7) Отправка данных клиенту
-			sprintf(send_buffer, "%s - %s\n", sz_client_address, recv_buffer);
+			sprintf(send_buffer, "%s%s\n", sz_client_address, recv_buffer);
 			Broadcast(send_buffer, GetClientPosition(GetCurrentThreadId()));
 			/*sprintf(send_buffer, "Привет Клиент, Ваше сообщение: %s", recv_buffer);
 			iResult = send(client_socket, send_buffer, strlen(send_buffer), NULL);

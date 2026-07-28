@@ -21,7 +21,8 @@ using std::endl;
 
 #define MTU		1500 //Maximum Transfer Unit - максимальный блок данныхб который можно передать по сети для сетей семейства Ethernet MTU составляет 1500 Byte
 
-
+BOOL finish = FALSE;
+VOID Receive(SOCKET connect_socket);
 
 void main()
 {
@@ -84,6 +85,16 @@ void main()
 
 	freeaddrinfo(target);
 
+	HANDLE hReceiveThread = CreateThread
+	(
+		NULL,
+		0,
+		(LPTHREAD_START_ROUTINE)Receive,
+		(LPVOID)  & connect_socket,
+		NULL,
+		0
+	);
+
 	//4) Отправка данных на Сервер
 	CHAR send_buffer[MTU] = "Hello Server! How are you?";
 	do
@@ -103,14 +114,8 @@ void main()
 	cout << "Sent " << iResult << " Bytes" << endl;
 
 	//5) Получение данных от Сервера
-	CHAR recv_buffer[MTU] = {};
-	iResult = recv(connect_socket, recv_buffer, MTU, NULL);
-	dwError = WSAGetLastError();
-	if (iResult > 0)cout << iResult << "Byte received. Message: " << recv_buffer << endl;
-	else if (iResult == 0)cout << "Nothing received." << endl;
-	else cout
-		<< "Receive failed with error: " << WSAGetLastError() << endl
-		<< FormatLastError(dwError, szError);
+	Receive(connect_socket);
+
 	ZeroMemory(send_buffer, strlen(send_buffer));
 	cout << "Введите сообщение: "; 
 	//cin >> send_buffer;
@@ -118,6 +123,9 @@ void main()
 	cin.getline(send_buffer, MTU);
 	SetConsoleCP(866);
 	} while (strcmp(send_buffer, "exit"));
+	finish = TRUE;
+	WaitForSingleObject(hReceiveThread, INFINITE);
+	CloseHandle(hReceiveThread);
 
 	//6) Завершаем сеанс работы с Сервером и освобождаем ресурсы
 	iResult = shutdown(connect_socket, SD_BOTH);	//закрываем соединение с Сервером в обоих направлениях
@@ -127,5 +135,24 @@ void main()
 		<< FormatLastError(dwError, szError);
 	closesocket(connect_socket);
 	WSACleanup();
+
 }
-		
+
+VOID Receive(SOCKET connect_socket)
+{
+	DWORD dwError = 0;
+	CHAR szError[256] = {};
+	INT iResult = 0;
+	CHAR recv_buffer[MTU] = {};
+	do
+	{
+		iResult = recv(connect_socket, recv_buffer, MTU, NULL);
+		dwError = WSAGetLastError();
+		if (iResult > 0)cout << iResult << "Byte received. Message: " << recv_buffer << endl;
+		else if (iResult == 0)cout << "Nothing received." << endl;
+		else cout
+			<< "Receive failed with error: " << WSAGetLastError() << endl
+			<< FormatLastError(dwError, szError);
+		if (WSAGetLastError() == 10053)break;
+	} while (!finish);
+}
