@@ -177,6 +177,23 @@ VOID Shift(INT position)
 		g_dwThreadIDs[i] = g_dwThreadIDs[i + 1];
 	}
 }
+VOID Broadcast(CHAR send_buffer[], INT sender_index)
+{
+	CHAR szError[256] = {};
+	for (INT i = 0; i < n; i++)
+	{
+		if(i != sender_index)
+		{
+			INT iResult = send(g_hSockets[i], send_buffer, strlen(send_buffer), NULL);
+				if (iResult == SOCKET_ERROR)
+				{
+					cout << FormatLastError(WSAGetLastError(), szError) << endl;
+					cout << "send() failed with error: " << WSAGetLastError() << endl;
+					cout << "При отправке данныхх возникла ошибка: " << WSAGetLastError() << endl;
+				}
+		}
+	}
+}
 VOID ClientHandler(SOCKET client_socket)
 {
 	SOCKADDR_IN client_address;
@@ -220,14 +237,16 @@ VOID ClientHandler(SOCKET client_socket)
 			}
 
 			//7) Отправка данных клиенту
-			sprintf(send_buffer, "Привет Клиент, Ваше сообщение: %s", recv_buffer);
+			sprintf(send_buffer, "%s - %s\n", sz_client_address, recv_buffer);
+			Broadcast(send_buffer, GetClientPosition(GetCurrentThreadId()));
+			/*sprintf(send_buffer, "Привет Клиент, Ваше сообщение: %s", recv_buffer);
 			iResult = send(client_socket, send_buffer, strlen(send_buffer), NULL);
 			if (iResult == SOCKET_ERROR)
 			{
 				cout << FormatLastError(WSAGetLastError(), szError) << endl;
 				cout << "send() failed with error: " << WSAGetLastError() << endl;
 				cout << "При отправке данныхх возникла ошибка: " << WSAGetLastError() << endl;
-			}
+			}*/
 		} while (true);
 
 		//cin.get(); // Ожидает нажатие клавиши 'Enter'
