@@ -13,7 +13,17 @@
 // Это может бытьь из-за того, что список принимаемых параметров в прототипе и реализации отличается либо же реализация вообще нет.
 // WS2_32.lib
 #pragma comment(lib, "WS2_32.lib")
+#ifdef _DEBUG
 #pragma comment(lib, "FormatLastError.lib")
+#endif // _DEBUG
+
+#ifdef NDEBUG
+#ifdef WIN32
+#pragma comment(lib, "FormatLastErrorx86.lib")
+#elif
+#pragma comment(lib, "FormatLastErrorx64.lib")
+#endif WIN32
+#endif // NDEBUG
 
 using std::cin;
 using std::cout;
