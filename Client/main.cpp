@@ -18,9 +18,9 @@
 #endif // _DEBUG
 
 #ifdef NDEBUG
-#ifdef WIN32
+#ifdef _M_IX86
 #pragma comment(lib, "FormatLastErrorx86.lib")
-#elif
+#elif _M_X64
 #pragma comment(lib, "FormatLastErrorx64.lib")
 #endif WIN32
 #endif // NDEBUG
